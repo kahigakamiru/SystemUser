@@ -8,7 +8,7 @@ exports.validateUsers = (user)=>{
         email: Joi.string().email().required(),
         password: Joi.string().min(8).required(),
         isAdmin: Joi.bool().required(),
-        gender: Joi.string().required()
+       
     })
     
     return schema.validate(user)

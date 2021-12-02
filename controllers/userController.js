@@ -1,24 +1,27 @@
-const db = require("../db/db");
+const db = require("../database");
 const { validateUsers } = require("../helpers/validateUser");
 const bcrypt = require("bcrypt");
 const { v4: uuidv4 } = require("uuid");
 const Joi = require("joi");
 const _ = require("lodash");
-const generateToken = require("../helpers/generateToken");
-const parseResults = require("../helpers/parseResults");
+const generateToken = require("../helpers/genToken");
+
 
 module.exports = {
     registerUser: async (req, res) => {
+      
         try {
           const { error } = validateUsers(req.body);
+          
           if (error)
             return res
               .status(400)
               .send({ success: false, message: error.details[0].message });
-    
+              console.log(req.body.email);
           const { recordset } = await db.exec("getUserByEmail", {
-            email: req.body.email,
+            email: req.body.email
           });
+         
     
           const user = recordset[0];
           if (user)
@@ -29,6 +32,7 @@ module.exports = {
           const salt = await bcrypt.genSalt(10);
           const password = await bcrypt.hash(req.body.password, salt);
           const { firstname, email, age, lastname, isAdmin } = req.body;
+          console.log(email);
           const id = uuidv4();
           const admin = isAdmin ? 1 : 0;
           await db.exec("userRegister", {
@@ -39,12 +43,8 @@ module.exports = {
             email,
             age,
             isAdmin: admin,
+            isDeleted: 1
           });
-          await db.query(
-            "INSERT INTO dbo.registration_email_queue (user_id, active) VALUES ('" +
-              id +
-              "', 1)"
-          );
           res.send({ message: "User registered successfully" });
         } catch (error) {
           console.log(error.message);
@@ -66,7 +66,7 @@ module.exports = {
 
     const { email, password } = req.body;
 
-    const { recordset } = await db.exec("userByEmailGet", { email });
+    const { recordset } = await db.exec("getUserByEmail", { email });
 
     const user = recordset[0];
     if (!user)
@@ -92,7 +92,7 @@ module.exports = {
   getLoggedUser: async (req, res) => {
     try {
       const { email } = req.user;
-      const {recordset} = await db.exec("userByEmailGet", { email });
+      const {recordset} = await db.exec("getUserByEmail", { email });
       const user = recordset[0];
 
       const token = generateToken(user.email, user._id, user.isAdmin);
@@ -130,7 +130,7 @@ module.exports = {
           .status(400)
           .send({ success: false, message: error.details[0].message });
 
-      const userResult = await db.exec("userGet", {
+      const userResult = await db.exec("getUser", {
         userId: req.body.token,
       });
 
@@ -166,7 +166,7 @@ module.exports = {
           .status(400)
           .send({ success: false, message: error.details[0].message });
 
-      const { recordset } = await db.exec("userByEmailGet", {
+      const { recordset } = await db.exec("getUserByEmail", {
         email: req.body.email,
       });
 
@@ -183,13 +183,13 @@ module.exports = {
     }
   },
   getUsers: async (req, res) => {
-    let { recordset } = await db.exec("usersGet");
+    let { recordset } = await db.exec("getUsers");
     res.send({ users: recordset });
   },
   getUser: async (req, res) => {
     const { id } = req.params;
     if (!id) return res.status(400).send({ message: "Id is required" });
-    let { recordset } = await db.exec("userGet", {
+    let { recordset } = await db.exec("getUser", {
       userId: id,
     });
     res.send({ user: recordset[0] });
@@ -197,13 +197,12 @@ module.exports = {
   updateUser: async (req, res) => {
     try {
       const { first, last, email, age, id } = req.body;
-      await db.exec("updateUser", {
+      await db.exec("userUpdater", {
         firstname: first,
         lastname: last,
         email,
-       
         age,
-        id,
+        id
       });
       res.status(201).send({message: "User Updated Successfully"});
     } catch (error) {

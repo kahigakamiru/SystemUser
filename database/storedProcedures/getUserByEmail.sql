@@ -1,6 +1,6 @@
 USE SystemUser
 GO
-CREATE OR ALTER PROCEDURE [dbo].[userByEmailGet]
+CREATE OR ALTER PROCEDURE [dbo].[getUserByEmail]
 	@email	varchar(250)
 as
 

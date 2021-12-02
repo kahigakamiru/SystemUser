@@ -5,7 +5,7 @@ const cors = require("cors");
 const config = require("./config");
 
 //Import Routes
-const authRoute = require("./routes/auth")
+const authRoute = require("./routes")
 
 app.use(express.urlencoded({extended: true}))
 app.use(express.json())
@@ -18,5 +18,5 @@ app.get('/', (req, res) => {
     res.send({ status: "Ok", message: "Welcome" });
 })
 
-const PORT = config.port;
+const PORT = process.env.PORT;
 app.listen(PORT, () => console.log(`Server running on localhost ${PORT}`))
